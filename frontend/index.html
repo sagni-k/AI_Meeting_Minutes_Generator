@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Audio Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 8px 16px;
+        }
+
+        pre {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Upload Audio → Transcription Test</h2>
+
+<input type="file" id="audioFile" accept="audio/*" />
+<br />
+<button onclick="uploadAudio()">Upload</button>
+
+<pre id="output">Transcript will appear here...</pre>
+
+<script>
+    async function uploadAudio() {
+        const fileInput = document.getElementById("audioFile");
+        const output = document.getElementById("output");
+
+        if (!fileInput.files.length) {
+            output.textContent = "Please select an audio file.";
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        output.textContent = "Uploading and transcribing... please wait.";
+
+        try {
+            const response = await fetch("http://localhost:8080/api/upload-audio", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error("Request failed with status " + response.status);
+            }
+
+            const data = await response.json();
+            output.textContent = data.transcript || JSON.stringify(data, null, 2);
+
+        } catch (error) {
+            output.textContent = "Error: " + error.message;
+        }
+    }
+</script>
+
+</body>
+</html>

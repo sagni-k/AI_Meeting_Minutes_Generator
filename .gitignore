@@ -1,0 +1,22 @@
+# ===== Spring Boot =====
+meeting-minutes-api/target/
+meeting-minutes-api/.mvn/
+meeting-minutes-api/.classpath
+meeting-minutes-api/.project
+meeting-minutes-api/.settings/
+
+# ===== Env & Secrets =====
+.env
+*.env
+application-local.yml
+application-local.properties
+
+# ===== Node / Frontend =====
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# ===== OS / Editor =====
+.DS_Store
+.idea/
+.vscode/
