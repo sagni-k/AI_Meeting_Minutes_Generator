@@ -2,18 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Audio Upload Test</title>
+    <title>Meeting Minutes Generator – Test UI</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             padding: 40px;
-            max-width: 600px;
+            max-width: 900px;
             margin: auto;
+        }
+
+        textarea {
+            width: 100%;
+            height: 160px;
+            margin-top: 10px;
+            padding: 10px;
         }
 
         button {
             margin-top: 10px;
             padding: 8px 16px;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         pre {
@@ -23,22 +35,66 @@
             border: 1px solid #ccc;
             white-space: pre-wrap;
         }
+
+        h3 {
+            margin-top: 40px;
+        }
+
+        label {
+            margin-right: 20px;
+        }
     </style>
 </head>
 <body>
 
-<h2>Upload Audio → Transcription Test</h2>
+<h2>Meeting Minutes Generator – Backend Test UI</h2>
+
+<!-- ================= AUDIO UPLOAD ================= -->
+
+<h3>1. Upload Audio (STT only)</h3>
 
 <input type="file" id="audioFile" accept="audio/*" />
 <br />
-<button onclick="uploadAudio()">Upload</button>
+<button id="uploadBtn" onclick="uploadAudio()">Upload & Transcribe</button>
 
-<pre id="output">Transcript will appear here...</pre>
+<!-- ================= TRANSCRIPT ================= -->
+
+<h3>2. Transcript</h3>
+
+<textarea id="transcriptInput" placeholder="Transcript will appear here after STT..."></textarea>
+
+<!-- ================= MODEL SELECTION ================= -->
+
+<h3>3. LLM Provider</h3>
+
+<label>
+    <input type="radio" name="llm" value="gemini" checked />
+    Gemini (default)
+</label>
+
+<label>
+    <input type="radio" name="llm" value="groq" />
+    Groq
+</label>
+
+<br />
+<button id="processBtn" onclick="processTranscript()">Generate Meeting Minutes</button>
+
+<!-- ================= OUTPUT ================= -->
+
+<h3>Output (Meeting Minutes)</h3>
+
+<pre id="output">Response will appear here...</pre>
 
 <script>
+    const output = document.getElementById("output");
+    const transcriptInput = document.getElementById("transcriptInput");
+    const processBtn = document.getElementById("processBtn");
+
+    let transcriptReady = false;
+
     async function uploadAudio() {
         const fileInput = document.getElementById("audioFile");
-        const output = document.getElementById("output");
 
         if (!fileInput.files.length) {
             output.textContent = "Please select an audio file.";
@@ -48,7 +104,7 @@
         const formData = new FormData();
         formData.append("file", fileInput.files[0]);
 
-        output.textContent = "Uploading and transcribing... please wait.";
+        output.textContent = "Uploading audio and transcribing...";
 
         try {
             const response = await fetch("http://localhost:8080/api/upload-audio", {
@@ -61,7 +117,56 @@
             }
 
             const data = await response.json();
-            output.textContent = data.transcript || JSON.stringify(data, null, 2);
+
+            transcriptInput.value = data.transcript || "";
+            transcriptReady = true;
+            output.textContent = "Transcription completed. You can now generate meeting minutes.";
+
+        } catch (error) {
+            output.textContent = "Error: " + error.message;
+        }
+    }
+
+    async function processTranscript() {
+
+        if (!transcriptReady) {
+            output.textContent = "Transcript not available yet.";
+            return;
+        }
+
+        const transcript = transcriptInput.value.trim();
+        if (!transcript) {
+            output.textContent = "Transcript is empty.";
+            return;
+        }
+
+        const selectedModel =
+            document.querySelector('input[name="llm"]:checked').value;
+
+        const callGemini = selectedModel === "gemini";
+
+        output.textContent =
+            "Processing transcript using " +
+            (callGemini ? "Gemini..." : "Groq...");
+
+        try {
+            const response = await fetch("http://localhost:8080/api/process-transcript", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    transcript: transcript,
+                    callGemini: callGemini
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error("Request failed with status " + response.status);
+            }
+
+            const data = await response.json();
+            output.textContent = JSON.stringify(data, null, 2);
 
         } catch (error) {
             output.textContent = "Error: " + error.message;

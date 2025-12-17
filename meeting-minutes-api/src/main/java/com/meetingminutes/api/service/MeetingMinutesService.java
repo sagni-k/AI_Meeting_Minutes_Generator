@@ -1,4 +1,9 @@
 package com.meetingminutes.api.service;
 
-public class MeetingMinutesService {
+import com.meetingminutes.api.dto.MeetingMinutesResponse;
+import com.meetingminutes.api.dto.TranscriptRequest;
+
+public interface MeetingMinutesService {
+    MeetingMinutesResponse generateMeetingMinutes(TranscriptRequest request);
 }
+

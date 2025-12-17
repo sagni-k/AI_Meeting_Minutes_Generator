@@ -10,6 +10,8 @@ meeting-minutes-api/.settings/
 *.env
 application-local.yml
 application-local.properties
+meeting-minutes-api/src/main/resources/application.properties
+
 
 # ===== Node / Frontend =====
 frontend/node_modules/

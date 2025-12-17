@@ -1,5 +1,3 @@
-//AudioConversionService Implementation
-
 package com.meetingminutes.api.service;
 
 import com.meetingminutes.api.dto.TranscriptRequest;
@@ -22,11 +20,14 @@ public class AudioConversionServiceImpl implements AudioConversionService {
     private static final String UPLOAD_URL = "https://api.assemblyai.com/v2/upload";
     private static final String TRANSCRIPT_URL = "https://api.assemblyai.com/v2/transcript";
 
+    private static final long POLL_INTERVAL_MS = 3000;
+    private static final long MAX_POLL_DURATION_MS = 60_000;
+
     @Override
     public TranscriptRequest convertAudioToTranscript(MultipartFile audioFile) {
 
         try {
-            // 1. Upload audio file
+            // 1. Upload audio
             HttpHeaders uploadHeaders = new HttpHeaders();
             uploadHeaders.set("Authorization", assemblyApiKey);
             uploadHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -39,49 +40,42 @@ public class AudioConversionServiceImpl implements AudioConversionService {
 
             String audioUrl = (String) uploadResponse.getBody().get("upload_url");
 
-            // 2. Request transcription
+            // 2. Start transcription
             HttpHeaders transcriptHeaders = new HttpHeaders();
             transcriptHeaders.set("Authorization", assemblyApiKey);
             transcriptHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-            Map<String, String> transcriptRequestBody = Map.of(
-                    "audio_url", audioUrl
-            );
-
             HttpEntity<Map<String, String>> transcriptEntity =
-                    new HttpEntity<>(transcriptRequestBody, transcriptHeaders);
+                    new HttpEntity<>(Map.of("audio_url", audioUrl), transcriptHeaders);
 
             ResponseEntity<Map> transcriptResponse =
-                    restTemplate.postForEntity(
-                            TRANSCRIPT_URL,
-                            transcriptEntity,
-                            Map.class
-                    );
+                    restTemplate.postForEntity(TRANSCRIPT_URL, transcriptEntity, Map.class);
 
             String transcriptId = (String) transcriptResponse.getBody().get("id");
 
-            // 3. Poll until transcription completes (SYNC)
+            // 3. Poll with timeout
             String pollingUrl = TRANSCRIPT_URL + "/" + transcriptId;
+            long startTime = System.currentTimeMillis();
 
             while (true) {
-                HttpEntity<Void> pollingEntity =
-                        new HttpEntity<>(transcriptHeaders);
+
+                if (System.currentTimeMillis() - startTime > MAX_POLL_DURATION_MS) {
+                    throw new RuntimeException("Transcription timed out");
+                }
 
                 ResponseEntity<Map> pollingResponse =
                         restTemplate.exchange(
                                 pollingUrl,
                                 HttpMethod.GET,
-                                pollingEntity,
+                                new HttpEntity<>(transcriptHeaders),
                                 Map.class
                         );
 
                 String status = (String) pollingResponse.getBody().get("status");
 
                 if ("completed".equals(status)) {
-                    String text = (String) pollingResponse.getBody().get("text");
-
                     TranscriptRequest request = new TranscriptRequest();
-                    request.setTranscript(text);
+                    request.setTranscript((String) pollingResponse.getBody().get("text"));
                     return request;
                 }
 
@@ -89,8 +83,7 @@ public class AudioConversionServiceImpl implements AudioConversionService {
                     throw new RuntimeException("AssemblyAI transcription failed");
                 }
 
-                // Wait before next poll (blocking, as requested)
-                Thread.sleep(3000);
+                Thread.sleep(POLL_INTERVAL_MS);
             }
 
         } catch (Exception e) {
@@ -98,4 +91,3 @@ public class AudioConversionServiceImpl implements AudioConversionService {
         }
     }
 }
-
