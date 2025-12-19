@@ -21,6 +21,7 @@ Make sure you have the following installed:
 
 ## Repository Structure
 
+```text
 AI_Meeting_Minutes_Generator/
 │
 ├── meeting-minutes-api/ # Spring Boot backend
@@ -28,7 +29,7 @@ AI_Meeting_Minutes_Generator/
 ├── meeting-minutes-generator-frontend/ # React frontend
 │
 └── README.md
-
+```
 ---
 
 
