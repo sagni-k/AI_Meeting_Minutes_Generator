@@ -4,6 +4,7 @@ meeting-minutes-api/.mvn/
 meeting-minutes-api/.classpath
 meeting-minutes-api/.project
 meeting-minutes-api/.settings/
+meeting-minutes-api/src/main/resources/application.properties
 
 # ===== Env & Secrets =====
 .env
@@ -13,10 +14,11 @@ application-local.properties
 meeting-minutes-api/src/main/resources/application.properties
 
 
-# ===== Node / Frontend =====
-frontend/node_modules/
-frontend/dist/
-frontend/build/
+# ===== React / Frontend ===== 
+meeting-minutes-generator-frontend/node_modules/ 
+meeting-minutes-generator-frontend/dist/ 
+meeting-minutes-generator-frontend/build/ 
+meeting-minutes-generator-frontend/.env
 
 # ===== OS / Editor =====
 .DS_Store
