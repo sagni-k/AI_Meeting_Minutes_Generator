@@ -10,9 +10,11 @@ export function useProcessing() {
   const [transcript, setTranscript] = useState("");
   const [result, setResult] = useState(null);
 
-  // Explicit STT trigger
   const handleAudioUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      setError("Please select an audio file first.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -22,21 +24,29 @@ export function useProcessing() {
       const res = await uploadAudio(selectedFile);
 
       if (!res.data?.transcript) {
-        throw new Error("STT failed or timed out");
+        throw new Error("STT_FAILED");
       }
 
       setTranscript(res.data.transcript);
     } catch (err) {
-      setError("Speech-to-text failed. Please try again.");
+      if (err.response) {
+        setError("Audio transcription failed. Please try a different audio file.");
+      } else if (err.request) {
+        setError("Backend service is unavailable. Please try again later.");
+      } else {
+        setError("Unexpected error during transcription.");
+      }
     } finally {
       setLoading(false);
       setStatusText("");
     }
   };
 
-  // LLM processing
   const handleProcessTranscript = async (model) => {
-    if (!transcript) return;
+    if (!transcript) {
+      setError("Please provide a transcript before processing.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -47,11 +57,37 @@ export function useProcessing() {
       const res = await processTranscript(transcript, model);
       setResult(res.data);
     } catch (err) {
-      setError("LLM failed after maximum retries.");
+      if (err.response) {
+        setError("AI processing failed. Try switching the model or retry later.");
+      } else if (err.request) {
+        setError("Backend service is unavailable. Please try again later.");
+      } else {
+        setError("Unexpected error during AI processing.");
+      }
     } finally {
       setLoading(false);
       setStatusText("");
     }
+  };
+
+  
+
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    setError(null);
+  };
+
+  const clearTranscript = () => {
+    setTranscript("");
+    setResult(null);
+    setError(null);
+  };
+
+  const clearAll = () => {
+    setSelectedFile(null);
+    setTranscript("");
+    setResult(null);
+    setError(null);
   };
 
   return {
@@ -69,5 +105,9 @@ export function useProcessing() {
 
     handleAudioUpload,
     handleProcessTranscript,
+
+    clearSelectedFile,
+    clearTranscript,
+    clearAll,
   };
 }

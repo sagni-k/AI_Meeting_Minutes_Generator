@@ -2,7 +2,9 @@ import AudioUploader from "../components/upload/AudioUploader";
 import TranscriptBox from "../components/results/TranscriptBox";
 import Button from "../components/common/Button";
 import Loader from "../components/common/Loader";
+import MeetingResults from "../components/results/MeetingResults";
 import { useProcessing } from "../hooks/useProcessing";
+import { generateMeetingReport } from "../utils/pdfGenerator";
 import { useState } from "react";
 
 export default function Home() {
@@ -21,55 +23,97 @@ export default function Home() {
 
     handleAudioUpload,
     handleProcessTranscript,
+
+    clearSelectedFile,
+    clearTranscript,
+    clearAll,
   } = useProcessing();
 
   const [model, setModel] = useState("groq");
 
   return (
-    <div className="space-y-6">
-      {/* Audio upload section */}
+    <div className="space-y-10">
       <AudioUploader
         selectedFile={selectedFile}
         onFileSelect={setSelectedFile}
         onTranscribe={handleAudioUpload}
+        onClear={clearSelectedFile}
         disabled={loading}
       />
 
       {loading && <Loader text={statusText} />}
 
-      {/* Transcript input / edit */}
-      <TranscriptBox value={transcript} onChange={setTranscript} />
+      <div className="rounded-2xl bg-white/10 backdrop-blur-md
+                      border border-white/20 shadow-xl
+                      p-6 space-y-6">
 
-      {/* Model selector */}
-      <div className="flex items-center gap-3">
-        <select
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-          className="border rounded p-2"
-        >
-          <option value="groq">Groq</option>
-          <option value="gemini">Gemini</option>
-        </select>
+        <TranscriptBox value={transcript} onChange={setTranscript} />
 
-        <span className="text-xs text-gray-500">
-          Choose another model if one is overloaded
-        </span>
+        <div className="flex flex-wrap items-center gap-4">
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="bg-white/10 backdrop-blur-md
+                       border border-white/20
+                       rounded-xl px-3 py-2
+                       text-white
+                       focus:outline-none"
+          >
+            <option value="groq" className="text-black">Groq</option>
+            <option value="gemini" className="text-black">Gemini</option>
+          </select>
+
+          <span className="text-xs text-gray-300">
+            Choose another model if one is overloaded
+          </span>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Button
+            disabled={!transcript || loading}
+            onClick={() => handleProcessTranscript(model)}
+          >
+            Generate Meeting Minutes
+          </Button>
+
+          {transcript && (
+            <button
+              onClick={clearTranscript}
+              className="px-4 py-2 rounded-xl
+                         border border-red-400/40
+                         text-red-300
+                         hover:bg-red-400/10 transition"
+            >
+              Clear Transcript
+            </button>
+          )}
+
+          {(selectedFile || transcript || result) && (
+            <button
+              onClick={clearAll}
+              className="px-4 py-2 rounded-xl
+                         border border-white/30
+                         text-gray-300
+                         hover:bg-white/10 transition"
+            >
+              Reset All
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* LLM trigger */}
-      <Button
-        disabled={!transcript || loading}
-        onClick={() => handleProcessTranscript(model)}
-      >
-        Generate Meeting Minutes
-      </Button>
-
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && <p className="text-red-400 text-sm">{error}</p>}
 
       {result && (
-        <pre className="bg-white p-4 rounded border text-sm overflow-x-auto">
-          {JSON.stringify(result, null, 2)}
-        </pre>
+        <>
+          <MeetingResults data={result} />
+
+          <div className="flex justify-end">
+            <Button onClick={() => generateMeetingReport(result)}>
+              Download Report
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );
