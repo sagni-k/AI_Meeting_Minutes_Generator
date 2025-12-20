@@ -4,7 +4,6 @@ meeting-minutes-api/.mvn/
 meeting-minutes-api/.classpath
 meeting-minutes-api/.project
 meeting-minutes-api/.settings/
-meeting-minutes-api/src/main/resources/application.properties
 
 # ===== Env & Secrets =====
 .env
