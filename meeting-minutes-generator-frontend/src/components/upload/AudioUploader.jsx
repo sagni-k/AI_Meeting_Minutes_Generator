@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import Button from "../common/Button";
 
 export default function AudioUploader({
@@ -10,17 +10,19 @@ export default function AudioUploader({
 }) {
   const fileInputRef = useRef(null);
 
+  // 🔥 CRITICAL FIX:
+  // Whenever selectedFile becomes null (Clear or Reset All),
+  // reset the actual file input so the same file can be reselected
+  useEffect(() => {
+    if (!selectedFile && fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [selectedFile]);
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       onFileSelect(file);
-    }
-  };
-
-  const handleClear = () => {
-    onClear();
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""; 
     }
   };
 
@@ -60,7 +62,7 @@ export default function AudioUploader({
 
           {selectedFile && (
             <button
-              onClick={handleClear}
+              onClick={onClear}
               className="px-3 py-2 rounded-lg text-sm
                          border border-red-400/40
                          text-red-300
