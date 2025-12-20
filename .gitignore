@@ -11,7 +11,8 @@ meeting-minutes-api/src/main/resources/application.properties
 *.env
 application-local.yml
 application-local.properties
-meeting-minutes-api/src/main/resources/application.properties
+
+meeting-minutes-api/.env
 
 
 # ===== React / Frontend ===== 
